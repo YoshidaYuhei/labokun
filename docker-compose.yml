@@ -1,0 +1,48 @@
+# 複数のサービスに対して同じイメージ、環境変数を使えるようにする
+x-base_rails: &base_rails
+  env_file: .env
+  networks:
+    - labokun
+  # 標準入力を受け付ける
+  # docker attach を使う場合やbash, rails console を使う場合必要
+  stdin_open: true
+  # 仮想ターミナルを割り当てる。対話的なシェルが可能
+  tty: true
+  volumes:
+    - .:/app
+
+services:
+  app:
+    <<: *base_rails
+    build:
+      context: "."
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+    environment:
+      - DATABASE_HOST=db
+      - DATABASE_USER=root
+      - DATABASE_PASSWORD=password
+      - DATABASE_NAME=labokun_development
+
+  db:
+    image: mysql:8.0
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: labokun_development
+      MYSQL_USER: my_user
+      MYSQL_PASSWORD: password
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - labokun
+
+volumes:
+  db_data:
+
+networks:
+  labokun:
